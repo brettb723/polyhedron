@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>File Upload</title>
+  
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+
+</head>
+<body>
+
+  <div class="container mt-5">
+
+    <h1>File Upload</h1>
+
+    <!-- File upload form -->
+    <form id="uploadForm">
+      <div class="form-group">
+        <label>Select File</label>
+        <input type="file" class="form-control-file" id="fileInput">
+      </div>
+      
+      <button type="submit" class="btn btn-primary">Upload</button>
+    </form>
+
+    <!-- Uploaded files -->
+    <div id="uploadedFiles" class="mt-5">
+
+    <!-- New section -->
+    <div id="uploadedFilesSection">
+        <h2>Uploaded Files</h2>
+        
+        <div id="uploadedFiles"></div>
+    </div>
+    </div>
+
+  </div>
+
+  <!-- jQuery and Bootstrap JS -->
+  <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+
+  <!-- AWS SDK -->
+  <script src="https://sdk.amazonaws.com/js/aws-sdk-2.7.16.min.js"></script>
+
+  <script>
+    // Configure AWS SDK
+    AWS.config.update({
+      region: 'us-east-1', 
+      accessKeyId: 'AKIA6CMCJTGJAJ6URTIH', 
+      secretAccessKey: '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'
+    });
+
+    // Get reference to S3 service
+    const s3 = new AWS.S3();
+    const bucketName = 'polyhedron10';
+
+    function deleteFile(key) {
+        const params = {
+            Bucket: bucketName, 
+            Key: key
+        };
+        s3.deleteObject(params, function(err, data) {
+            if (err) {
+            alert('Error deleting file: ' + err.message);
+            } else {
+            alert('File deleted successfully');
+            listFiles(); // re-list files
+            }
+        });
+        }
+
+    // Upload file to S3
+    function uploadFile(file) {
+      const params = {
+        Bucket: bucketName,
+        Key: file.name,
+        Body: file,
+        ACL: 'public-read'
+      };
+
+
+
+
+            s3.upload(params, function(err, data) {
+        if (err) {
+          alert('Error uploading file'+ err.message);
+        } else {
+          alert('File uploaded successfully');
+          listFiles();
+        }
+      });
+    }
+
+    // List uploaded files 
+    function listFiles() {
+      const params = {
+        Bucket: bucketName
+      };
+      s3.listObjectsV2(params, function(err, data) {
+    if (err) {
+      alert('Error getting files');
+    } else {
+      let html = '';
+      data.Contents.forEach(function(file) {
+        html += `<div class="card mt-2">
+                    <div class="card-body">
+                      <h5 class="card-title">${file.Key}</h5>
+                      <p class="card-text">${formatBytes(file.Size)}</p>
+                      <a href="${s3.endpoint.href}${bucketName}/${file.Key}" target="_blank" class="btn btn-primary">View File</a>
+                      <button class="btn btn-danger delete-file" data-key="${file.Key}">Delete File</button>
+                    </div>
+                  </div>`;
+      });
+      document.getElementById('uploadedFiles').innerHTML = html;
+
+      // Add event listener for delete button
+      document.querySelectorAll('.delete-file').forEach(button => {
+        button.onclick = function(e) {
+          const key = e.target.dataset.key;
+          deleteFile(key);
+        }
+      });
+    }
+  });
+}
+
+
+
+    // Format bytes 
+    function formatBytes(bytes, decimals = 2) {
+      if (bytes === 0) return '0 Bytes';
+
+      const k = 1024;
+      const dm = decimals < 0 ? 0 : decimals;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    }
+
+    
+    window.onload = function() {
+  listFiles();
+}
+    // Handle file upload form submit
+    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const file = document.getElementById('fileInput').files[0];
+      uploadFile(file);
+    });
+
+        // Handler for delete button
+    document.querySelectorAll('.delete-file').forEach(button => {
+    button.onclick = function(e) {
+    const key = e.target.dataset.key;
+    deleteFile(key);
+        }
+    });
+
+  </script>
+
+</body>
+</html>

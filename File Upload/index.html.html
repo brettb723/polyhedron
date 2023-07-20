@@ -44,11 +44,13 @@
   <script src="https://sdk.amazonaws.com/js/aws-sdk-2.7.16.min.js"></script>
 
   <script>
+    const accessKeyId = process.env.AWS_ACCESS_KEY_ID; 
+    const secretKey = process.env.AWS_SECRET_ACCESS_KEY;
     // Configure AWS SDK
     AWS.config.update({
       region: 'us-east-1', 
-      accessKeyId: 'AKIA6CMCJTGJAJ6URTIH', 
-      secretAccessKey: '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'
+      accessKeyId: accessKeyId, 
+      secretAccessKey: secretKey
     });
 
     // Get reference to S3 service
